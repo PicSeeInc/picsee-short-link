@@ -161,16 +161,6 @@ server.tool(
     url: z.string().optional().describe("Search by exact destination URL"),
     encodeId: z.string().optional().describe("Search by exact slug"),
     authorId: z.string().optional().describe("Filter by author ID"),
-    utm: z
-      .object({
-        source: z.string().optional(),
-        medium: z.string().optional(),
-        campaign: z.string().optional(),
-        term: z.string().optional(),
-        content: z.string().optional(),
-      })
-      .optional()
-      .describe("Filter by UTM parameters (Advanced plan)"),
   },
   async (params) => {
     try {

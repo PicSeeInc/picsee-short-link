@@ -28,7 +28,6 @@ export interface ListParams {
     authorId?: string;
     fbPixel?: string;
     gTag?: string;
-    utm?: Record<string, string>;
 }
 export interface EditParams {
     encodeId?: string;

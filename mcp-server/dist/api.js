@@ -120,7 +120,6 @@ export async function listLinks(token, params) {
         "authorId",
         "fbPixel",
         "gTag",
-        "utm",
     ]) {
         if (params[k] !== undefined)
             bodyObj[k] = params[k];

@@ -1,13 +1,13 @@
 ---
 name: picsee-short-link
-description: PicSee URL shortener and link management via MCP Server or CLI scripts. Use when the user asks to shorten a URL, check link analytics, list/search links, or mentions PicSee. Supports unauthenticated mode (basic shortening) and authenticated mode (analytics, editing, search). Token stored with AES-256-CBC encryption.
+description: PicSee URL shortener and link management via MCP Server. Use when the user asks to shorten a URL, check link analytics, list/search links, or mentions PicSee. Supports unauthenticated mode (basic shortening) and authenticated mode (analytics, editing, search). Token stored with AES-256-CBC encryption.
 metadata:
   {
     "openclaw":
       {
         "emoji": "🔗",
         "configPaths": ["skills/picsee-short-link/config.json"],
-        "requires": { "bins": ["node"] },
+        "requires": { "bins": ["node", "mcporter"] },
         "externalApis": ["api.pics.ee", "chrome-ext.picsee.tw", "api.qrserver.com", "quickchart.io"],
         "writesPaths": ["skills/picsee-short-link/config.json", "~/.openclaw/.picsee_token", "/tmp/*.png"]
       }
@@ -16,175 +16,187 @@ metadata:
 
 # PicSee Short Link
 
-URL shortener with analytics, search, and link management. Two interfaces available:
-- **MCP Server** (preferred for Claude Code, Cursor, OpenClaw mcporter)
-- **CLI scripts** (legacy, still functional)
+URL shortener with analytics, search, and link management via **Model Context Protocol (MCP) Server**.
+
+Provides AI agents (Claude Code, Cursor, OpenClaw) with direct access to PicSee's URL shortening and analytics features through standardized tool calls.
 
 ---
 
-## MCP Server
+## 首次設定 (First-Time Setup)
 
-Entry point: `skills/picsee-short-link/mcp-server/dist/index.js`
+### OpenClaw
 
-### Register with mcporter (OpenClaw)
+Execute the following command to register the MCP server (only needed once):
 
 ```bash
 mcporter config add picsee stdio -- node ~/.openclaw/workspace/skills/picsee-short-link/mcp-server/dist/index.js
 ```
 
-Then call tools via:
+Verify registration:
 ```bash
-mcporter call picsee.shorten_url url="https://example.com/long-path"
+mcporter config list | grep picsee
 ```
 
-### Register with Claude Code
+### Claude Code
 
-In `.claude/settings.json`:
+Add to `.claude/settings.json`:
 ```json
 {
   "mcpServers": {
     "picsee": {
       "command": "node",
-      "args": ["<absolute-path>/mcp-server/dist/index.js"]
+      "args": ["/absolute/path/to/mcp-server/dist/index.js"]
     }
   }
 }
 ```
 
-### MCP Tools Reference
+Replace `/absolute/path/to/` with the actual path to the skill directory.
 
-#### `shorten_url`
+### ClawHub
+
+Install via ClawHub CLI:
+```bash
+clawhub install picsee-short-link
+```
+
+MCP server registration is handled automatically.
+
+---
+
+## 使用方式 (Usage)
+
+### Basic Shortening
+```bash
+mcporter call picsee.shorten_url url="https://example.com/long-url"
+```
+
+### With Custom Slug
+```bash
+mcporter call picsee.shorten_url url="https://example.com" encodeId="mylink"
+```
+
+### Check Analytics
+```bash
+mcporter call picsee.get_analytics encodeId="mylink"
+```
+
+### List Recent Links
+```bash
+mcporter call picsee.list_links startTime="2026-03-31T23:59:59" limit=10
+```
+
+---
+
+## MCP 工具參考 (MCP Tools Reference)
+
+### `shorten_url`
 
 Shorten a URL. Auto-detects auth mode: if token is stored, uses authenticated API (`api.pics.ee`) with advanced features; otherwise falls back to unauthenticated (`chrome-ext.picsee.tw`).
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `url` | string (URL) | **yes** | Destination URL |
-| `encodeId` | string | no | Custom slug (3-90 chars) |
-| `domain` | string | no | Short link domain (default: `pse.is`) |
-| `title` | string | no | Custom preview title (Advanced plan) |
-| `description` | string | no | Custom preview description (Advanced plan) |
-| `imageUrl` | string (URL) | no | Custom preview thumbnail (Advanced plan) |
-| `tags` | string[] | no | Tags for organisation (Advanced plan) |
-| `utm` | object | no | `{source, medium, campaign, term, content}` (Advanced plan) |
+**Parameters:**
+- `url` (string, **required**): Destination URL
+- `encodeId` (string): Custom slug (3-90 chars)
+- `domain` (string): Short link domain (default: `pse.is`)
+- `title` (string): Custom preview title (Advanced plan)
+- `description` (string): Custom preview description (Advanced plan)
+- `imageUrl` (string): Custom preview thumbnail (Advanced plan)
+- `tags` (string[]): Tags for organization (Advanced plan)
+- `utm` (object): `{source, medium, campaign, term, content}` (Advanced plan)
 
-Returns: `{ success, shortUrl, encodeId, mode }`
-
----
-
-#### `get_analytics`
-
-Click stats for a short link. Requires authentication.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `encodeId` | string | **yes** | Slug of the short link (e.g. `abc123` from `pse.is/abc123`) |
-
-Returns: `{ success, data: { totalClicks, uniqueClicks, dailyClicks[] } }`
+**Returns:** `{ success, shortUrl, encodeId, mode }`
 
 ---
 
-#### `list_links`
+### `get_analytics`
 
-List and search links. Requires authentication. Results are returned in reverse chronological order (newest first).
+Click stats for a short link. **Requires authentication.**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `startTime` | string | **yes** | Query backward from this time. **Use the LAST moment** of the desired period. Format: `YYYY-MM-DDTHH:MM:SS`. Example: `2026-03-31T23:59:59` for March 2026 |
-| `limit` | number | no | Results per page (1-50, default 50) |
-| `isAPI` | boolean | no | Filter API-generated links only |
-| `isStar` | boolean | no | Filter starred links only |
-| `prevMapId` | string | no | Pagination cursor — links older than this mapId |
-| `externalId` | string | no | Filter by external ID |
-| `keyword` | string | no | Search title/description (Advanced, 3-30 chars) |
-| `tag` | string | no | Filter by tag (Advanced) |
-| `url` | string | no | Filter by exact destination URL |
-| `encodeId` | string | no | Filter by exact slug |
-| `authorId` | string | no | Filter by author ID |
-| `utm` | object | no | `{source, medium, campaign, term, content}` (Advanced) |
+**Parameters:**
+- `encodeId` (string, **required**): Slug of the short link (e.g. `abc123` from `pse.is/abc123`)
 
-Returns: `{ success, data: [{ encodeId, domain, url, title, totalClicks, uniqueClicks, createTime, tags, utm }] }`
-
-**Common mistake**: Using the first day of a month as startTime (e.g. `2026-03-01`) will miss most of that month's data. Always use the last day.
+**Returns:** `{ success, data: { totalClicks, uniqueClicks, dailyClicks[] } }`
 
 ---
 
-#### `edit_link`
+### `list_links`
 
-Edit an existing short link. Requires authentication + Advanced plan. Only include fields to change.
+List and search links. **Requires authentication.** Results are returned in reverse chronological order (newest first).
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `originalEncodeId` | string | **yes** | Current slug of the link to edit |
-| `url` | string (URL) | no | New destination URL |
-| `encodeId` | string | no | New custom slug |
-| `domain` | string | no | New domain |
-| `title` | string | no | New preview title |
-| `description` | string | no | New preview description |
-| `imageUrl` | string (URL) | no | New preview thumbnail |
-| `tags` | string[] | no | New tags |
-| `fbPixel` | string | no | Meta Pixel ID |
-| `gTag` | string | no | Google Tag Manager ID |
-| `utm` | object | no | New UTM parameters |
-| `expireTime` | string | no | Expiration time (ISO 8601) |
+**Parameters:**
+- `startTime` (string, **required**): Query backward from this time. **Use the LAST moment** of the desired period. Format: `YYYY-MM-DDTHH:MM:SS`. Example: `2026-03-31T23:59:59` for March 2026
+- `limit` (number): Results per page (1-50, default 50)
+- `isAPI` (boolean): Filter API-generated links only
+- `isStar` (boolean): Filter starred links only
+- `prevMapId` (string): Pagination cursor — links older than this mapId
+- `externalId` (string): Filter by external ID
+- `keyword` (string): Search title/description (Advanced, 3-30 chars)
+- `tag` (string): Filter by tag (Advanced)
+- `url` (string): Filter by exact destination URL
+- `encodeId` (string): Filter by exact slug
+- `authorId` (string): Filter by author ID
 
-Returns: `{ success, message }`
+**Returns:** `{ success, data: [{ encodeId, domain, url, title, totalClicks, uniqueClicks, createTime, tags, utm }] }`
 
----
-
-#### `delete_link`
-
-Delete or recover a short link. Requires authentication.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `encodeId` | string | **yes** | Slug of the short link |
-| `action` | string | no | `"delete"` (default) or `"recover"` |
-
-Returns: `{ success, message }`
+**Common mistake:** Using the first day of a month as startTime (e.g. `2026-03-01`) will miss most of that month's data. Always use the last day.
 
 ---
 
-#### `setup_auth`
+### `edit_link`
+
+Edit an existing short link. **Requires authentication + Advanced plan.** Only include fields to change.
+
+**Parameters:**
+- `originalEncodeId` (string, **required**): Current slug of the link to edit
+- `url` (string): New destination URL
+- `encodeId` (string): New custom slug
+- `domain` (string): New domain
+- `title` (string): New preview title
+- `description` (string): New preview description
+- `imageUrl` (string): New preview thumbnail
+- `tags` (string[]): New tags
+- `fbPixel` (string): Meta Pixel ID
+- `gTag` (string): Google Tag Manager ID
+- `utm` (object): New UTM parameters
+- `expireTime` (string): Expiration time (ISO 8601)
+
+**Returns:** `{ success, message }`
+
+---
+
+### `delete_link`
+
+Delete or recover a short link. **Requires authentication.**
+
+**Parameters:**
+- `encodeId` (string, **required**): Slug of the short link
+- `action` (string): `"delete"` (default) or `"recover"`
+
+**Returns:** `{ success, message }`
+
+---
+
+### `setup_auth`
 
 Store and verify a PicSee API token. Token is encrypted with AES-256-CBC using a machine-specific key (hostname + username → SHA-256) and saved to `~/.openclaw/.picsee_token`.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `token` | string | **yes** | PicSee API token |
+**Parameters:**
+- `token` (string, **required**): PicSee API token
 
-Returns: `{ success, plan, quota, usage, message }`
+**Returns:** `{ success, plan, quota, usage, message }`
 
-Token source: <https://picsee.io/> → avatar → Settings → API → Copy token
-
----
-
-## CLI Scripts (Legacy)
-
-All scripts in `skills/picsee-short-link/scripts/`. Output JSON. Can be used standalone without MCP.
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `shorten.mjs` | Shorten URL | `node shorten.mjs "<URL>"` |
-| `analytics.mjs` | Link stats | `node analytics.mjs "<ENCODE_ID>"` |
-| `list.mjs` | List/search links | `node list.mjs "<START_TIME>" [LIMIT] [--flags]` |
-| `edit.mjs` | Edit link | `node edit.mjs "<ENCODE_ID>" "<NEW_URL>"` |
-| `delete.mjs` | Delete/recover | `node delete.mjs "<ENCODE_ID>" [delete\|recover]` |
-| `auth.mjs` | Store token | `node auth.mjs "<TOKEN>"` |
-| `setup.mjs` | Set unauth mode | `node setup.mjs` |
-
-For `list.mjs` advanced flags, run `node list.mjs --help`.
+**Token source:** https://picsee.io/ → avatar → Settings → API → Copy token
 
 ---
 
-## Auth Modes
+## 認證模式 (Auth Modes)
 
 | Mode | API Host | Features |
 |------|----------|----------|
 | **Unauthenticated** | `chrome-ext.picsee.tw` | Create short links only |
 | **Authenticated** | `api.pics.ee` | Create + analytics + list + search + edit + delete |
 
-Auto-detection: if encrypted token exists at `~/.openclaw/.picsee_token`, authenticated mode is used. Otherwise unauthenticated.
+**Auto-detection:** If encrypted token exists at `~/.openclaw/.picsee_token`, authenticated mode is used. Otherwise unauthenticated.
 
 `config.json` tracks the mode preference:
 ```json
@@ -193,17 +205,16 @@ Auto-detection: if encrypted token exists at `~/.openclaw/.picsee_token`, authen
 
 ---
 
-## Security
+## 安全機制 (Security)
 
 - **Token encryption**: AES-256-CBC, IV stored alongside ciphertext (`iv_hex:ciphertext_hex`)
 - **Key derivation**: `SHA-256(hostname + "-" + username)` — machine-specific, no shared secrets
 - **File permissions**: `0600` on token file
 - **No plaintext tokens** stored anywhere
-- **Compatible** between MCP Server and CLI scripts (same keychain module, same file path)
 
 ---
 
-## Error Handling
+## 錯誤處理 (Error Handling)
 
 | Scenario | Response |
 |----------|----------|

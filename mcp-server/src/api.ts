@@ -37,7 +37,6 @@ export interface ListParams {
   authorId?: string;
   fbPixel?: string;
   gTag?: string;
-  utm?: Record<string, string>;
 }
 
 export interface EditParams {
@@ -182,7 +181,6 @@ export async function listLinks(token: string, params: ListParams) {
     "authorId",
     "fbPixel",
     "gTag",
-    "utm",
   ] as const) {
     if ((params as any)[k] !== undefined) bodyObj[k] = (params as any)[k];
   }

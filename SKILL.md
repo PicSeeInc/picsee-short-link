@@ -37,22 +37,6 @@ Verify registration:
 mcporter config list | grep picsee
 ```
 
-### Claude Code
-
-Add to `.claude/settings.json`:
-```json
-{
-  "mcpServers": {
-    "picsee": {
-      "command": "node",
-      "args": ["/absolute/path/to/mcp-server/dist/index.js"]
-    }
-  }
-}
-```
-
-Replace `/absolute/path/to/` with the actual path to the skill directory.
-
 ### ClawHub
 
 Install via ClawHub CLI:

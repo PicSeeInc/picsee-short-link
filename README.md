@@ -44,8 +44,20 @@ A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — UR
 
 ### Claude Code
 
-Add to `.claude/settings.json`:
+```bash
+claude mcp add picsee -- node /path/to/picsee-short-link/mcp-server/dist/index.js
+```
 
+Replace `/path/to/` with the actual path to the skill directory.
+
+### Cursor
+
+Edit Cline MCP settings file:
+- **macOS**: `~/Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
+- **Windows**: `%APPDATA%\Cursor\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
+- **Linux**: `~/.config/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
+
+Add:
 ```json
 {
   "mcpServers": {
@@ -56,6 +68,8 @@ Add to `.claude/settings.json`:
   }
 }
 ```
+
+Then restart Cursor.
 
 ### OpenClaw (via mcporter)
 
@@ -68,6 +82,16 @@ Then call tools:
 ```bash
 mcporter call picsee.shorten_url url="https://example.com/long-url"
 ```
+
+### ClawHub
+
+Install via ClawHub CLI:
+
+```bash
+clawhub install picsee-short-link
+```
+
+MCP server registration is handled automatically.
 
 ### Smithery
 

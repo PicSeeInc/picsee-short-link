@@ -19,7 +19,7 @@ import * as api from "./api.js";
 
 const server = new McpServer({
   name: "picsee",
-  version: "1.3.0",
+  version: "1.3.1",
 });
 
 // ---------------------------------------------------------------------------

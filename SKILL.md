@@ -22,7 +22,7 @@ Provides AI agents (Claude Code, Cursor, OpenClaw) with direct access to PicSee'
 
 ---
 
-## 首次設定 (First-Time Setup)
+## First-Time Setup
 
 ### OpenClaw
 
@@ -64,7 +64,7 @@ MCP server registration is handled automatically.
 
 ---
 
-## 使用方式 (Usage)
+## Usage
 
 ### Basic Shortening
 ```bash
@@ -88,7 +88,7 @@ mcporter call picsee.list_links startTime="2026-03-31T23:59:59" limit=10
 
 ---
 
-## MCP 工具參考 (MCP Tools Reference)
+## MCP Tools Reference
 
 ### `shorten_url`
 
@@ -189,7 +189,7 @@ Store and verify a PicSee API token. Token is encrypted with AES-256-CBC using a
 
 ---
 
-## 認證模式 (Auth Modes)
+## Auth Modes
 
 | Mode | API Host | Features |
 |------|----------|----------|
@@ -205,7 +205,7 @@ Store and verify a PicSee API token. Token is encrypted with AES-256-CBC using a
 
 ---
 
-## 安全機制 (Security)
+## Security
 
 - **Token encryption**: AES-256-CBC, IV stored alongside ciphertext (`iv_hex:ciphertext_hex`)
 - **Key derivation**: `SHA-256(hostname + "-" + username)` — machine-specific, no shared secrets
@@ -214,7 +214,7 @@ Store and verify a PicSee API token. Token is encrypted with AES-256-CBC using a
 
 ---
 
-## 錯誤處理 (Error Handling)
+## Error Handling
 
 | Scenario | Response |
 |----------|----------|
@@ -230,17 +230,21 @@ These are **not MCP tools** — they are post-processing actions the agent perfo
 
 ### QR Code Generation
 
-When the user asks for a QR code after shortening:
+**After successfully shortening a URL**, proactively ask the user: "Would you like a QR code for this short link?"
+
+If yes, generate it:
 
 ```bash
 curl -s -o /tmp/<ENCODE_ID>_qr.png "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://pse.is/<ENCODE_ID>"
 ```
 
-Send via `message` tool with `filePath: "/tmp/<ENCODE_ID>_qr.png"`. Only generate when explicitly requested.
+Send via `message` tool with `filePath: "/tmp/<ENCODE_ID>_qr.png"`.
 
 ### Analytics Chart
 
-After calling `get_analytics`, if the user wants a visual chart of daily clicks:
+**After calling `get_analytics` and displaying click statistics**, proactively ask the user: "Would you like to see a visual chart of the daily clicks?"
+
+If yes, generate it:
 
 1. Extract `dailyClicks` array from the response
 2. Build a QuickChart URL with the data:
@@ -251,4 +255,4 @@ curl -s -o /tmp/<ENCODE_ID>_chart.png "https://quickchart.io/chart?w=600&h=300&c
 {type:'line',data:{labels:['3/1','3/2','3/3'],datasets:[{label:'Clicks',data:[45,67,23],borderColor:'rgb(59,130,246)',fill:false}]}}"
 ```
 
-Send via `message` tool with `filePath: "/tmp/<ENCODE_ID>_chart.png"`. Only generate when the user asks for visualization — don't auto-generate for every analytics query.
+Send via `message` tool with `filePath: "/tmp/<ENCODE_ID>_chart.png"`.

@@ -68,7 +68,13 @@ mcporter call picsee.shorten_url url="https://example.com/long-url"
 
 ### Smithery
 
-> Coming soon. The server is designed to be Smithery-compatible — see `smithery.yaml` in the repository.
+Install via Smithery registry:
+
+```bash
+npx @smithery/cli install picsee/short-link
+```
+
+Or browse: [https://smithery.ai/skills/picsee/short-link](https://smithery.ai/skills/picsee/short-link)
 
 ---
 

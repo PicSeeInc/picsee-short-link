@@ -30,7 +30,7 @@ A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — UR
 |:-----|:------------|:-----|
 | `shorten_url` | Create a `pse.is` short link with optional custom slug, tags, UTM, and preview metadata. Auto-detects auth mode | Optional |
 | `get_analytics` | Click statistics — total, unique, and daily breakdown for the past 60 days | Required |
-| `list_links` | List and search link history with filters (tags, keywords, UTM, stars, author, date range) | Required |
+| `list_links` | List and search link history with filters (tags, keywords, stars, author, date range) | Required |
 | `edit_link` | Update destination URL, slug, title, description, thumbnail, tags, UTM, tracking pixels, expiration (Advanced plan) | Required |
 | `delete_link` | Delete or recover a short link | Required |
 | `setup_auth` | Verify and encrypt your PicSee API token locally | No |
@@ -93,8 +93,6 @@ These recipes are documented in `SKILL.md` for agents that support the OpenClaw 
 | **File Permissions** | `0600` (owner read/write only) |
 | **Logging** | None — no URLs or metadata are logged by this server |
 
-The encryption format (`iv_hex:ciphertext_hex`) is shared between the MCP server and the legacy CLI scripts, so existing tokens work without re-authentication.
-
 ---
 
 ## 📁 Project Structure
@@ -110,7 +108,6 @@ picsee-short-link/
 │   ├── package.json
 │   ├── tsconfig.json
 │   └── smithery.yaml
-├── scripts/              # Legacy CLI scripts (.mjs)
 ├── references/           # API documentation
 ├── SKILL.md              # OpenClaw skill definition
 ├── README.md             # This file

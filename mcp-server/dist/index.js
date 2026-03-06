@@ -16,7 +16,7 @@ import * as api from "./api.js";
 // ---------------------------------------------------------------------------
 const server = new McpServer({
     name: "picsee",
-    version: "1.0.0",
+    version: "1.3.0",
 });
 // ---------------------------------------------------------------------------
 // Helpers
@@ -221,6 +221,109 @@ server.tool("setup_auth", "Store and verify a PicSee API token. The token is enc
     }
     catch (e) {
         return err(`Auth failed: ${e.message}`);
+    }
+});
+server.tool("generate_qr_code", "Generate a QR code URL for a PicSee short link. **Only call this if the user explicitly requests a QR code.** Returns a shortened URL to the QR code image.", {
+    shortUrl: z.string().url().describe("The short URL to encode in QR code"),
+    size: z
+        .number()
+        .int()
+        .min(100)
+        .max(1000)
+        .default(300)
+        .describe("QR code size in pixels (default: 300)"),
+}, async ({ shortUrl, size }) => {
+    try {
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(shortUrl)}`;
+        // Shorten the QR code URL using unauthenticated mode (no quota consumed)
+        let shortQrUrl = qrCodeUrl;
+        try {
+            const shortenResult = await api.shortenUnauth({ url: qrCodeUrl });
+            shortQrUrl = shortenResult.data?.picseeUrl || qrCodeUrl;
+        }
+        catch (shortenError) {
+            // If shortening fails, fall back to original URL
+            console.error("Failed to shorten QR code URL:", shortenError.message);
+        }
+        return ok({
+            success: true,
+            qrCodeUrl: shortQrUrl,
+            originalQrUrl: qrCodeUrl,
+            shortUrl,
+            size,
+            note: shortQrUrl !== qrCodeUrl
+                ? "QR code URL automatically shortened via PicSee (unauthenticated, no quota used)"
+                : "QR code URL (shortening unavailable)",
+        });
+    }
+    catch (e) {
+        return err(`QR code generation failed: ${e.message}`);
+    }
+});
+server.tool("generate_analytics_chart", "Generate a line chart URL visualizing daily click statistics. **Only call this if the user explicitly requests a chart or visualization.** Returns a shortened URL to the chart image.", {
+    dailyClicks: z
+        .array(z.object({
+        date: z.string().describe("Date in format YYYY-MM-DD or MM/DD"),
+        clicks: z.number().int().min(0).describe("Number of clicks"),
+    }))
+        .describe("Array of daily click data"),
+    encodeId: z
+        .string()
+        .optional()
+        .describe("Link slug (used in chart title)"),
+}, async ({ dailyClicks, encodeId }) => {
+    try {
+        if (dailyClicks.length === 0)
+            throw new Error("dailyClicks array cannot be empty");
+        const labels = dailyClicks.map((d) => d.date);
+        const data = dailyClicks.map((d) => d.clicks);
+        const chartConfig = {
+            type: "line",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: "Clicks",
+                        data,
+                        borderColor: "rgb(59,130,246)",
+                        backgroundColor: "rgba(59,130,246,0.1)",
+                        fill: true,
+                    },
+                ],
+            },
+            options: {
+                title: {
+                    display: !!encodeId,
+                    text: encodeId ? `Daily Clicks: ${encodeId}` : "",
+                },
+                scales: {
+                    yAxes: [{ ticks: { beginAtZero: true } }],
+                },
+            },
+        };
+        const chartUrl = `https://quickchart.io/chart?w=600&h=300&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
+        // Shorten the long chart URL using unauthenticated mode (no quota consumed)
+        let shortChartUrl = chartUrl;
+        try {
+            const shortenResult = await api.shortenUnauth({ url: chartUrl });
+            shortChartUrl = shortenResult.data?.picseeUrl || chartUrl;
+        }
+        catch (shortenError) {
+            // If shortening fails, fall back to original URL
+            console.error("Failed to shorten chart URL:", shortenError.message);
+        }
+        return ok({
+            success: true,
+            chartUrl: shortChartUrl,
+            originalChartUrl: chartUrl,
+            dataPoints: dailyClicks.length,
+            note: shortChartUrl !== chartUrl
+                ? "Chart URL automatically shortened via PicSee (unauthenticated, no quota used)"
+                : "Chart URL (shortening unavailable)",
+        });
+    }
+    catch (e) {
+        return err(`Chart generation failed: ${e.message}`);
     }
 });
 // ---------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 [![MCP Native](https://img.shields.io/badge/MCP-Native-blue.svg)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — URL shortening, click analytics, and link management. Built for AI agents like **Claude Code**, **OpenClaw**, and **Cursor**.
+A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — URL shortening with QR code generation, click analytics, and link management. Built for AI agents like **Claude Code**, **OpenClaw**, and **Cursor**.
 
 ---
 
@@ -17,10 +17,11 @@ A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — UR
 ## 🌟 Features
 
 - **Dual-Mode Operation** — Unauthenticated (basic shortening) and Authenticated (full management) with automatic detection
+- **URL Shortening + QR Codes** — Create short links and instantly generate QR codes (300x300px, customizable)
+- **Visual Analytics** — Total clicks, unique clicks, daily trends, and optional chart generation
 - **Secure Token Storage** — AES-256-CBC encryption with machine-specific key derivation (hostname + username → SHA-256). Tokens never stored in plaintext
-- **Analytics** — Total clicks, unique clicks, and daily traffic trends
 - **Link Management** — Search, filter (tags, stars, keywords), edit, and delete
-- **Agent Recipes** — Built-in instructions for QR code generation and analytics chart visualization
+- **Agent-Ready** — Built-in instructions for proactive QR code and chart generation workflows
 
 ---
 
@@ -29,7 +30,9 @@ A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — UR
 | Tool | Description | Auth |
 |:-----|:------------|:-----|
 | `shorten_url` | Create a `pse.is` short link with optional custom slug, tags, UTM, and preview metadata. Auto-detects auth mode | Optional |
+| `generate_qr_code` | Generate a QR code URL for any short link (300x300px default, customizable size) | No |
 | `get_analytics` | Click statistics — total, unique, and daily breakdown for the past 60 days | Required |
+| `generate_analytics_chart` | Generate a line chart URL visualizing daily click trends | No |
 | `list_links` | List and search link history with filters (tags, keywords, stars, author, date range) | Required |
 | `edit_link` | Update destination URL, slug, title, description, thumbnail, tags, UTM, tracking pixels, expiration (Advanced plan) | Required |
 | `delete_link` | Delete or recover a short link | Required |

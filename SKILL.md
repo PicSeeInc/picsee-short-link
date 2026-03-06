@@ -1,6 +1,6 @@
 ---
 name: picsee-short-link
-description: PicSee URL shortener and link management via MCP Server. Use when the user asks to shorten a URL, check link analytics, list/search links, or mentions PicSee. Supports unauthenticated mode (basic shortening) and authenticated mode (analytics, editing, search). Token stored with AES-256-CBC encryption.
+description: PicSee URL shortener with QR code generation, analytics charts, and link management via MCP Server. Use when the user asks to shorten a URL, generate QR codes, visualize analytics, list/search links, or mentions PicSee. Supports unauthenticated mode (basic shortening + QR codes + charts) and authenticated mode (full analytics, editing, search). Token stored with AES-256-CBC encryption.
 metadata:
   {
     "openclaw":
@@ -16,9 +16,9 @@ metadata:
 
 # PicSee Short Link
 
-URL shortener with analytics, search, and link management via **Model Context Protocol (MCP) Server**.
+URL shortener with **QR code generation**, **analytics charts**, and link management via **Model Context Protocol (MCP) Server**.
 
-Provides AI agents (Claude Code, Cursor, OpenClaw) with direct access to PicSee's URL shortening and analytics features through standardized tool calls.
+Provides AI agents (Claude Code, Cursor, OpenClaw) with direct access to PicSee's URL shortening, QR code generation, analytics visualization, and link management features through standardized tool calls.
 
 ---
 
@@ -76,9 +76,21 @@ mcporter call picsee.shorten_url url="https://example.com/long-url"
 mcporter call picsee.shorten_url url="https://example.com" encodeId="mylink"
 ```
 
+### Generate QR Code
+```bash
+mcporter call picsee.generate_qr_code shortUrl="https://pse.is/mylink" size=300
+```
+
 ### Check Analytics
 ```bash
 mcporter call picsee.get_analytics encodeId="mylink"
+```
+
+### Generate Analytics Chart
+```bash
+mcporter call picsee.generate_analytics_chart \
+  dailyClicks='[{"date":"3/1","clicks":45},{"date":"3/2","clicks":67}]' \
+  encodeId="mylink"
 ```
 
 ### List Recent Links
@@ -108,6 +120,23 @@ Shorten a URL. Auto-detects auth mode: if token is stored, uses authenticated AP
 
 ---
 
+### `generate_qr_code`
+
+Generate a QR code URL for any short link. **Only call this if the user explicitly requests a QR code.** Automatically shortens the QR code URL via PicSee (unauthenticated mode, no quota consumed).
+
+**Parameters:**
+- `shortUrl` (string, **required**): The short URL to encode in QR code
+- `size` (number): QR code size in pixels (100-1000, default: 300)
+
+**Returns:** `{ success, qrCodeUrl, originalQrUrl, shortUrl, size, note }`
+
+**Example:**
+```bash
+mcporter call picsee.generate_qr_code shortUrl="https://pse.is/mylink" size=300
+```
+
+---
+
 ### `get_analytics`
 
 Click stats for a short link. **Requires authentication.**
@@ -116,6 +145,25 @@ Click stats for a short link. **Requires authentication.**
 - `encodeId` (string, **required**): Slug of the short link (e.g. `abc123` from `pse.is/abc123`)
 
 **Returns:** `{ success, data: { totalClicks, uniqueClicks, dailyClicks[] } }`
+
+---
+
+### `generate_analytics_chart`
+
+Generate a line chart URL visualizing daily click trends. **Only call this if the user explicitly requests a chart or visualization.** Automatically shortens the chart URL via PicSee (unauthenticated mode, no quota consumed).
+
+**Parameters:**
+- `dailyClicks` (array, **required**): Array of `{ date, clicks }` objects. Date format: `YYYY-MM-DD` or `MM/DD`
+- `encodeId` (string): Link slug (used in chart title)
+
+**Returns:** `{ success, chartUrl, originalChartUrl, dataPoints, note }`
+
+**Example:**
+```bash
+mcporter call picsee.generate_analytics_chart \
+  dailyClicks='[{"date":"3/1","clicks":45},{"date":"3/2","clicks":67}]' \
+  encodeId="mylink"
+```
 
 ---
 

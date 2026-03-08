@@ -1,9 +1,11 @@
-# 🔗 PicSee MCP Server
+# 🔗 Skill for PicSee URL Shortener
 
-[![MCP Native](https://img.shields.io/badge/MCP-Native-blue.svg)](https://modelcontextprotocol.io)
+[![Agent Skills](https://img.shields.io/badge/Agent_Skills-Open_Standard-blue.svg)](https://agentskills.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — URL shortening with QR code generation, click analytics, and link management. Built for AI agents like **Claude Code**, **OpenClaw**, and **Cursor**.
+A **CLI-based [Agent Skill](https://agentskills.io)** for [PicSee](https://picsee.io) — URL shortening with QR code generation, click analytics, and link management.
+
+Works with any AI agent that supports the Agent Skills standard or can run shell commands.
 
 ---
 
@@ -11,6 +13,7 @@ A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — UR
 
 - **PicSee Website:** [https://picsee.io](https://picsee.io)
 - **API Documentation:** [https://picsee.io/developers/docs/public-api.html](https://picsee.io/developers/docs/public-api.html)
+- **Agent Skills Spec:** [https://agentskills.io](https://agentskills.io)
 
 ---
 
@@ -18,25 +21,47 @@ A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — UR
 
 - **Dual-Mode Operation** — Unauthenticated (basic shortening) and Authenticated (full management) with automatic detection
 - **URL Shortening + QR Codes** — Create short links and instantly generate QR codes (300x300px, customizable)
-- **Visual Analytics** — Total clicks, unique clicks, daily trends, and optional chart generation
+- **Visual Analytics** — Total clicks, unique clicks, daily trends, and chart generation
 - **Secure Token Storage** — AES-256-CBC encryption with machine-specific key derivation (hostname + username → SHA-256). Tokens never stored in plaintext
 - **Link Management** — Search, filter (tags, stars, keywords), edit, and delete
-- **Agent-Ready** — Built-in instructions for proactive QR code and chart generation workflows
+- **Zero External Dependencies** — Only uses Node.js built-in modules
+- **Agent Skills Standard** — Compatible with 25+ AI agents and development tools
 
 ---
 
-## 🧩 MCP Tools
+## 🤖 Supported Platforms
 
-| Tool | Description | Auth |
-|:-----|:------------|:-----|
-| `shorten_url` | Create a `pse.is` short link with optional custom slug, tags, UTM, and preview metadata. Auto-detects auth mode | Optional |
-| `generate_qr_code` | Generate a QR code URL for any short link (300x300px default, customizable size) | No |
-| `get_analytics` | Click statistics — total, unique, and daily breakdown for the past 60 days | Required |
-| `generate_analytics_chart` | Generate a line chart URL visualizing daily click trends | No |
-| `list_links` | List and search link history with filters (tags, keywords, stars, author, date range) | Required |
-| `edit_link` | Update destination URL, slug, title, description, thumbnail, tags, UTM, tracking pixels, expiration (Advanced plan) | Required |
-| `delete_link` | Delete or recover a short link | Required |
-| `setup_auth` | Verify and encrypt your PicSee API token locally | No |
+This skill follows the [Agent Skills open standard](https://agentskills.io), which is supported by:
+
+| Platform | How to install | How it works |
+|:---------|:---------------|:-------------|
+| **Claude Code** | `cp -r picsee-short-link ~/.claude/skills/` | Auto-discovered, invoke with `/picsee-short-link` |
+| **claude.ai** | Upload skill folder in Customize → Skills | Auto-invoked when relevant |
+| **OpenClaw** | `clawhub install picsee-short-link` | Auto-discovered via SKILL.md |
+| **Cursor** | Place in `.cursor/skills/` | Auto-discovered by agent |
+| **VS Code Copilot** | Place in `.github/skills/` | Auto-discovered by Copilot |
+| **OpenAI Codex** | Place in `.codex/skills/` | Auto-discovered |
+| **Gemini CLI** | Place in `.gemini/skills/` | Auto-discovered |
+| **Any shell agent** | Point to CLI path | `node cli/dist/cli.js shorten "..."` |
+
+> See [agentskills.io](https://agentskills.io) for the full list of supported platforms.
+
+---
+
+## 🧩 Commands
+
+| Command | Description | Auth |
+|:--------|:------------|:-----|
+| `shorten <url>` | Create a `pse.is` short link with optional custom slug, tags, UTM, and preview metadata | Optional |
+| `analytics <id>` | Click statistics — total, unique, and daily breakdown | Required |
+| `chart <id>` | Fetch analytics and generate a chart URL visualizing daily click trends | Required |
+| `list` | List and search link history with filters (tags, keywords, stars, date range) | Required |
+| `edit <id>` | Update destination URL, slug, title, description, tags, expiration (Advanced plan) | Required |
+| `delete <id>` | Delete a short link | Required |
+| `recover <id>` | Recover a deleted short link | Required |
+| `qr <shortUrl>` | Generate a QR code URL for any short link | No |
+| `auth <token>` | Verify and encrypt your PicSee API token locally | No |
+| `auth-status` | Check current authentication status | No |
 
 ---
 
@@ -45,53 +70,17 @@ A **Model Context Protocol (MCP)** server for [PicSee](https://picsee.io) — UR
 ### Claude Code
 
 ```bash
-claude mcp add picsee -- node /path/to/picsee-short-link/mcp-server/dist/index.js
+cp -r picsee-short-link ~/.claude/skills/picsee-short-link
 ```
 
-Replace `/path/to/` with the actual path to the skill directory.
-
-### Cursor
-
-Edit Cline MCP settings file:
-- **macOS**: `~/Library/Application Support/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
-- **Windows**: `%APPDATA%\Cursor\User\globalStorage\saoudrizwan.claude-dev\settings\cline_mcp_settings.json`
-- **Linux**: `~/.config/Cursor/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`
-
-Add:
-```json
-{
-  "mcpServers": {
-    "picsee": {
-      "command": "node",
-      "args": ["/path/to/picsee-short-link/mcp-server/dist/index.js"]
-    }
-  }
-}
-```
-
-Then restart Cursor.
-
-### OpenClaw (via mcporter)
-
-```bash
-mcporter config add picsee stdio -- node /path/to/picsee-short-link/mcp-server/dist/index.js
-```
-
-Then call tools:
-
-```bash
-mcporter call picsee.shorten_url url="https://example.com/long-url"
-```
+Then invoke with `/picsee-short-link` or let Claude auto-discover it.
 
 ### ClawHub
-
-Install via ClawHub CLI:
 
 ```bash
 clawhub install picsee-short-link
 ```
-
-MCP server registration is handled automatically.
+Or browse: [https://clawhub.ai/PicSeeInc/picsee-short-link](https://clawhub.ai/PicSeeInc/picsee-short-link)
 
 ### Smithery
 
@@ -103,16 +92,50 @@ npx @smithery/cli install picsee/short-link
 
 Or browse: [https://smithery.ai/skills/picsee/short-link](https://smithery.ai/skills/picsee/short-link)
 
+### claude.ai
+
+Upload the skill folder in **Customize → Skills**. Claude will auto-invoke it when relevant.
+
+### Cursor
+
+Place the skill folder in `.cursor/skills/`:
+
+```bash
+cp -r picsee-short-link .cursor/skills/picsee-short-link
+```
+
+### OpenAI Codex
+
+Place the skill folder in `.codex/skills/`:
+
+```bash
+cp -r picsee-short-link .codex/skills/picsee-short-link
+```
+
+### Direct CLI
+
+Any agent with shell access can call the CLI directly:
+
+```bash
+node /path/to/picsee-short-link/cli/dist/cli.js shorten "https://example.com"
+node /path/to/picsee-short-link/cli/dist/cli.js shorten "https://example.com" --slug mylink --tags seo,marketing
+node /path/to/picsee-short-link/cli/dist/cli.js list --limit 10
+node /path/to/picsee-short-link/cli/dist/cli.js help
+```
+
 ---
 
-## 🎨 Agent Recipes
+## 🔑 Authentication
 
-Beyond the core MCP tools, this skill includes instructions for AI agents to handle post-processing:
+```bash
+# Store your PicSee API token (encrypted locally)
+node /path/to/picsee-short-link/cli/dist/cli.js auth <token>
 
-- **QR Code** — Generate a 300×300 QR code image via `api.qrserver.com` after shortening
-- **Analytics Chart** — Parse daily click data from `get_analytics` and render a trend chart via `quickchart.io`
+# Check auth status
+node /path/to/picsee-short-link/cli/dist/cli.js auth-status
+```
 
-These recipes are documented in `SKILL.md` for agents that support the OpenClaw skill format.
+Get your token: [picsee.io](https://picsee.io) → Avatar → Settings → API → Copy token.
 
 ---
 
@@ -124,7 +147,6 @@ These recipes are documented in `SKILL.md` for agents that support the OpenClaw 
 | **Encryption** | AES-256-CBC, random IV per write |
 | **Key Derivation** | `SHA-256(hostname + "-" + username)` — unique per machine and user |
 | **File Permissions** | `0600` (owner read/write only) |
-| **Logging** | None — no URLs or metadata are logged by this server |
 
 ---
 
@@ -132,19 +154,18 @@ These recipes are documented in `SKILL.md` for agents that support the OpenClaw 
 
 ```
 picsee-short-link/
-├── mcp-server/           # MCP Server (TypeScript)
+├── SKILL.md              # Agent Skills definition (open standard)
+├── cli/                  # CLI Tool (TypeScript)
 │   ├── src/
-│   │   ├── index.ts      # Server entry point + tool definitions
+│   │   ├── cli.ts        # CLI entry point + command definitions
 │   │   ├── api.ts        # PicSee REST API client
 │   │   └── keychain.ts   # AES-256-CBC token storage
 │   ├── dist/             # Compiled output
 │   ├── package.json
-│   ├── tsconfig.json
-│   └── smithery.yaml
+│   └── tsconfig.json
 ├── references/           # API documentation
-├── SKILL.md              # OpenClaw skill definition
 ├── README.md             # This file
-└── _meta.json            # OpenClaw registry metadata
+└── _meta.json            # ClawHub registry metadata
 ```
 
 ---

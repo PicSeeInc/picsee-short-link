@@ -9,59 +9,15 @@ Works with any AI agent that supports the Agent Skills standard or can run shell
 
 ---
 
-## 📖 Resources
-
-- **PicSee Website:** [https://picsee.io](https://picsee.io)
-- **API Documentation:** [https://picsee.io/developers/docs/public-api.html](https://picsee.io/developers/docs/public-api.html)
-- **Agent Skills Spec:** [https://agentskills.io](https://agentskills.io)
-
----
-
 ## 🌟 Features
 
 - **Dual-Mode Operation** — Unauthenticated (basic shortening) and Authenticated (full management) with automatic detection
 - **URL Shortening + QR Codes** — Create short links and instantly generate QR codes (300x300px, customizable)
 - **Visual Analytics** — Total clicks, unique clicks, daily trends, and chart generation
-- **Secure Token Storage** — AES-256-CBC encryption with machine-specific key derivation (hostname + username → SHA-256). Tokens never stored in plaintext
+- **Secure Token Storage** — AES-256-CBC encryption with salted key derivation (random 32-byte salt + hostname + username → SHA-256). Tokens never stored in plaintext
 - **Link Management** — Search, filter (tags, stars, keywords), edit, and delete
-- **Zero External Dependencies** — Only uses Node.js built-in modules
+- **Minimal Dependencies** — Requires only Node.js >= 18 (uses built-in modules, no extra npm packages at runtime)
 - **Agent Skills Standard** — Compatible with 25+ AI agents and development tools
-
----
-
-## 🤖 Supported Platforms
-
-This skill follows the [Agent Skills open standard](https://agentskills.io), which is supported by:
-
-| Platform | How to install | How it works |
-|:---------|:---------------|:-------------|
-| **Claude Code** | `cp -r picsee-short-link ~/.claude/skills/` | Auto-discovered, invoke with `/picsee-short-link` |
-| **claude.ai** | Upload skill folder in Customize → Skills | Auto-invoked when relevant |
-| **OpenClaw** | `clawhub install picsee-short-link` | Auto-discovered via SKILL.md |
-| **Cursor** | Place in `.cursor/skills/` | Auto-discovered by agent |
-| **VS Code Copilot** | Place in `.github/skills/` | Auto-discovered by Copilot |
-| **OpenAI Codex** | Place in `.codex/skills/` | Auto-discovered |
-| **Gemini CLI** | Place in `.gemini/skills/` | Auto-discovered |
-| **Any shell agent** | Point to CLI path | `node cli/dist/cli.js shorten "..."` |
-
-> See [agentskills.io](https://agentskills.io) for the full list of supported platforms.
-
----
-
-## 🧩 Commands
-
-| Command | Description | Auth |
-|:--------|:------------|:-----|
-| `shorten <url>` | Create a `pse.is` short link with optional custom slug, tags, UTM, and preview metadata | Optional |
-| `analytics <id>` | Click statistics — total, unique, and daily breakdown | Required |
-| `chart <id>` | Fetch analytics and generate a chart URL visualizing daily click trends | Required |
-| `list` | List and search link history with filters (tags, keywords, stars, date range) | Required |
-| `edit <id>` | Update destination URL, slug, title, description, tags, expiration (Advanced plan) | Required |
-| `delete <id>` | Delete a short link | Required |
-| `recover <id>` | Recover a deleted short link | Required |
-| `qr <shortUrl>` | Generate a QR code URL for any short link | No |
-| `auth <token>` | Verify and encrypt your PicSee API token locally | No |
-| `auth-status` | Check current authentication status | No |
 
 ---
 
@@ -125,6 +81,42 @@ node /path/to/picsee-short-link/cli/dist/cli.js help
 
 ---
 
+## 🤖 Supported Platforms
+
+This skill follows the [Agent Skills open standard](https://agentskills.io), which is supported by:
+
+| Platform | How to install | How it works |
+|:---------|:---------------|:-------------|
+| **Claude Code** | `cp -r picsee-short-link ~/.claude/skills/` | Auto-discovered, invoke with `/picsee-short-link` |
+| **claude.ai** | Upload skill folder in Customize → Skills | Auto-invoked when relevant |
+| **OpenClaw** | `clawhub install picsee-short-link` | Auto-discovered via SKILL.md |
+| **Cursor** | Place in `.cursor/skills/` | Auto-discovered by agent |
+| **VS Code Copilot** | Place in `.github/skills/` | Auto-discovered by Copilot |
+| **OpenAI Codex** | Place in `.codex/skills/` | Auto-discovered |
+| **Gemini CLI** | Place in `.gemini/skills/` | Auto-discovered |
+| **Any shell agent** | Point to CLI path | `node cli/dist/cli.js shorten "..."` |
+
+> See [agentskills.io](https://agentskills.io) for the full list of supported platforms.
+
+---
+
+## 🧩 Commands
+
+| Command | Description | Auth |
+|:--------|:------------|:-----|
+| `shorten <url>` | Create a `pse.is` short link with optional custom slug, tags, UTM, and preview metadata | Optional |
+| `analytics <id>` | Click statistics — total, unique, and daily breakdown | Required |
+| `chart <id>` | Fetch analytics and generate a chart URL visualizing daily click trends | Required |
+| `list` | List and search link history with filters (tags, keywords, stars, date range) | Required |
+| `edit <id>` | Update destination URL, slug, title, description, tags, expiration (Advanced plan) | Required |
+| `delete <id>` | Delete a short link | Required |
+| `recover <id>` | Recover a deleted short link | Required |
+| `qr <shortUrl>` | Generate a QR code URL for any short link | No |
+| `auth <token>` | Verify and encrypt your PicSee API token locally | No |
+| `auth-status` | Check current authentication status | No |
+
+---
+
 ## 🔑 Authentication
 
 ```bash
@@ -143,10 +135,10 @@ Get your token: [picsee.io](https://picsee.io) → Avatar → Settings → API �
 
 | Aspect | Detail |
 |:-------|:-------|
-| **Storage** | `~/.openclaw/.picsee_token` |
+| **Storage** | `~/.openclaw/.picsee_token` (encrypted token) + `~/.openclaw/.picsee_salt` (random salt) |
 | **Encryption** | AES-256-CBC, random IV per write |
-| **Key Derivation** | `SHA-256(hostname + "-" + username)` — unique per machine and user |
-| **File Permissions** | `0600` (owner read/write only) |
+| **Key Derivation** | `SHA-256(random-32byte-salt + hostname + "-" + username)` — salt generated once, making key unpredictable even if hostname/username are known |
+| **File Permissions** | `0600` on both token and salt files (owner read/write only) |
 
 ---
 
@@ -167,6 +159,14 @@ picsee-short-link/
 ├── README.md             # This file
 └── _meta.json            # ClawHub registry metadata
 ```
+
+---
+
+## 📖 Resources
+
+- **PicSee Website:** [https://picsee.io](https://picsee.io)
+- **API Documentation:** [https://picsee.io/developers/docs/public-api.html](https://picsee.io/developers/docs/public-api.html)
+- **Agent Skills Spec:** [https://agentskills.io](https://agentskills.io)
 
 ---
 

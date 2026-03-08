@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Node.js >= 18. Network access to api.pics.ee, chrome-ext.picsee.tw, api.qrserver.com, quickchart.io.
 metadata:
   author: picsee
-  version: "2.0.1"
+  version: "2.0.2"
   emoji: "🔗"
   openclaw-configPaths: "skills/picsee-short-link/config.json"
   openclaw-requires: "node"

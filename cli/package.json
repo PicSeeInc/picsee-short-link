@@ -1,6 +1,6 @@
 {
   "name": "@picsee/cli",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "PicSee URL Shortener CLI — shorten, analytics, list, edit, delete links",
   "type": "module",
   "bin": {

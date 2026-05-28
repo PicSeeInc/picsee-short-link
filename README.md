@@ -57,22 +57,29 @@ Place the skill in `.cursor/skills/picsee-short-link/`, then edit `~/.cursor/mcp
 ```json
 {
   "mcpServers": {
-    "picsee-short-link": { "url": "https://api.picsee.io/mcp" }
+    "picsee-short-link": { "url": "https://api.picsee.io/mcp/auth" }
   }
 }
 ```
 
+> For Cursor, use `https://api.picsee.io/mcp/auth` when you need to sign in (OAuth). Anonymous use (`create_short_link` only) can stay on `https://api.picsee.io/mcp`.
+
 ### Antigravity
 
-Add via Antigravity's MCP settings panel (Settings → MCP Servers → Add), or edit the config file directly:
+Add via Antigravity's MCP settings panel (Settings → MCP Servers → Add), or edit the config file directly. Antigravity connects through the `mcp-remote` stdio bridge:
 
 ```json
 {
   "mcpServers": {
-    "picsee-short-link": { "url": "https://api.picsee.io/mcp" }
+    "picsee-short-link": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://api.picsee.io/mcp/auth"]
+    }
   }
 }
 ```
+
+> Like Cursor, Antigravity should use `https://api.picsee.io/mcp/auth` when sign-in (OAuth) is required. Anonymous use (`create_short_link` only) can stay on `https://api.picsee.io/mcp`.
 
 Place `SKILL.md` in Antigravity's skills directory so the agent picks up usage guidance.
 
@@ -152,7 +159,7 @@ For clients that only support stdio, use the `mcp-remote` bridge from npm:
 |:---------|:----------------|:--------------|:-----------|:-------|
 | Claude Code | `~/.claude/skills/` | HTTP (native) | Browser popup, token in `~/.claude` | ✅ |
 | Cursor | `.cursor/skills/` | HTTP (native) | Browser popup, token in Cursor config | ✅ |
-| Antigravity | Antigravity skills dir | HTTP (native) | Browser popup | ✅ |
+| Antigravity | Antigravity skills dir | stdio via `mcp-remote` | Browser popup via `mcp-remote` | ✅ |
 | Codex CLI | `.codex/skills/` | stdio via `mcp-remote` | Browser popup via `mcp-remote` | ✅ |
 | OpenClaw / ClawHub | auto (via `clawhub install`) | HTTP | Browser popup | ✅ |
 | claude.ai | Customize → Skills | HTTP connector | Browser popup | ✅ |

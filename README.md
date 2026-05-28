@@ -78,17 +78,32 @@ Place `SKILL.md` in Antigravity's skills directory so the agent picks up usage g
 
 ### Codex / Codex CLI
 
-Add to `~/.codex/config.toml`:
+Add the server with the Codex CLI:
+
+```bash
+codex mcp add picsee-short-link --url https://api.picsee.io/mcp
+```
+
+Or add it directly to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.picsee-short-link]
-command = "npx"
-args = ["-y", "mcp-remote", "https://api.picsee.io/mcp"]
+url = "https://api.picsee.io/mcp"
 ```
 
-`mcp-remote` bridges stdio ↔ Streamable HTTP and handles OAuth in a browser. (Direct HTTP transport in Codex CLI is improving rapidly — check `codex mcp add --help` on your version.)
+Then authenticate it with OAuth:
 
-Place `SKILL.md` in `.codex/skills/picsee-short-link/` for skill discovery.
+```bash
+codex mcp login picsee-short-link --scopes user:read,user:write
+```
+
+Codex supports remote MCP servers over Streamable HTTP via --url, and MCP
+server configuration is shared between the CLI and the IDE extension.
+[platform.openai.com](https://platform.openai.com/docs/docs-mcp)
+
+If you use skills, place SKILL.md at:
+
+`~/.codex/skills/picsee-short-link/SKILL.md`
 
 ### OpenClaw / ClawHub
 
